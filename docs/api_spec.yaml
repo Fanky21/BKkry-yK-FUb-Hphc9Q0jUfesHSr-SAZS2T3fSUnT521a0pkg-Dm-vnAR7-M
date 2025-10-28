@@ -1,0 +1,399 @@
+openapi: 3.0.0
+info:
+  title: Distributed Synchronization System API
+  description: RESTful API for distributed locks, queues, and cache
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@example.com
+
+servers:
+  - url: http://localhost:5000
+    description: Node 1
+  - url: http://localhost:5001
+    description: Node 2
+  - url: http://localhost:5002
+    description: Node 3
+
+tags:
+  - name: Lock Manager
+    description: Distributed lock operations
+  - name: Queue
+    description: Distributed queue operations
+  - name: Cache
+    description: Distributed cache operations
+  - name: System
+    description: System health and metrics
+
+paths:
+  /api/lock/acquire:
+    post:
+      tags:
+        - Lock Manager
+      summary: Acquire a distributed lock
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - resource_id
+                - client_id
+                - lock_type
+              properties:
+                resource_id:
+                  type: string
+                  description: ID of the resource to lock
+                client_id:
+                  type: string
+                  description: ID of the client requesting the lock
+                lock_type:
+                  type: string
+                  enum: [shared, exclusive]
+                  description: Type of lock
+                timeout:
+                  type: number
+                  description: Lock timeout in seconds
+                  default: 30.0
+      responses:
+        '200':
+          description: Lock acquisition result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+
+  /api/lock/release:
+    post:
+      tags:
+        - Lock Manager
+      summary: Release a distributed lock
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - resource_id
+                - client_id
+              properties:
+                resource_id:
+                  type: string
+                client_id:
+                  type: string
+      responses:
+        '200':
+          description: Lock release result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+
+  /api/lock/status/{resource_id}:
+    get:
+      tags:
+        - Lock Manager
+      summary: Get lock status
+      parameters:
+        - name: resource_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Lock status information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resource_id:
+                    type: string
+                  lock_type:
+                    type: string
+                  holders:
+                    type: array
+                    items:
+                      type: string
+                  waiting_count:
+                    type: integer
+
+  /api/queue/enqueue:
+    post:
+      tags:
+        - Queue
+      summary: Enqueue a message
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - queue_name
+                - message
+              properties:
+                queue_name:
+                  type: string
+                message:
+                  type: object
+      responses:
+        '200':
+          description: Enqueue result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message_id:
+                    type: string
+
+  /api/queue/dequeue:
+    post:
+      tags:
+        - Queue
+      summary: Dequeue a message
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - queue_name
+                - consumer_id
+              properties:
+                queue_name:
+                  type: string
+                consumer_id:
+                  type: string
+      responses:
+        '200':
+          description: Dequeue result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: object
+
+  /api/queue/ack:
+    post:
+      tags:
+        - Queue
+      summary: Acknowledge message delivery
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - message_id
+              properties:
+                message_id:
+                  type: string
+      responses:
+        '200':
+          description: Acknowledgment result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+
+  /api/cache/get/{key}:
+    get:
+      tags:
+        - Cache
+      summary: Get value from cache
+      parameters:
+        - name: key
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Cache value
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  found:
+                    type: boolean
+                  value:
+                    type: object
+                  state:
+                    type: string
+        '404':
+          description: Cache miss
+
+  /api/cache/put:
+    post:
+      tags:
+        - Cache
+      summary: Put value in cache
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - key
+                - value
+              properties:
+                key:
+                  type: string
+                value:
+                  type: object
+      responses:
+        '200':
+          description: Put result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+
+  /api/cache/invalidate:
+    post:
+      tags:
+        - Cache
+      summary: Invalidate cache entry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - key
+              properties:
+                key:
+                  type: string
+      responses:
+        '200':
+          description: Invalidation result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+
+  /api/cache/stats:
+    get:
+      tags:
+        - Cache
+      summary: Get cache statistics
+      responses:
+        '200':
+          description: Cache statistics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  hits:
+                    type: integer
+                  misses:
+                    type: integer
+                  hit_rate:
+                    type: number
+                  size:
+                    type: integer
+                  capacity:
+                    type: integer
+
+  /health:
+    get:
+      tags:
+        - System
+      summary: Health check
+      responses:
+        '200':
+          description: Node health status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  node_id:
+                    type: string
+                  timestamp:
+                    type: number
+
+  /api/status:
+    get:
+      tags:
+        - System
+      summary: Get node status
+      responses:
+        '200':
+          description: Complete node status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  node_id:
+                    type: string
+                  running:
+                    type: boolean
+                  raft:
+                    type: object
+                  lock_manager:
+                    type: object
+                  queue:
+                    type: object
+                  cache:
+                    type: object
+
+  /metrics:
+    get:
+      tags:
+        - System
+      summary: Get Prometheus metrics
+      responses:
+        '200':
+          description: Metrics in Prometheus format
+          content:
+            text/plain:
+              schema:
+                type: string
+
+components:
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
